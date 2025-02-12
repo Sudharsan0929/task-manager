@@ -189,7 +189,7 @@ server.post("/checkemail", async (request, response) => {
     matchedUser.tokenexpiry = Date.now() + 3600000;
     await matchedUser.save();
 
-    const resetUrl = `http://localhost:3000/createPassword?token=${resettoken}`; //CREATING RESET LINK PASSING RESET TOKEN AS QUERY
+    const resetUrl = `https://task-manager-zbth.onrender.com/createPassword?token=${resettoken}`; //CREATING RESET LINK PASSING RESET TOKEN AS QUERY
     const subject = "Password reset link";
     const html = `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password. The link expires in 1 hour.</p>`;
     await sendMail(email, subject, html);
