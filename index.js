@@ -121,7 +121,7 @@ server.post("/signup", async (request, response) => {
 
     //Saving user to DB
     const result = await newUser.save();
-    console.log(result);
+    // console.log(result);
     if (result && result._id) {
       return response.redirect(`${request.headers["origin"]}/signin`);
     }
@@ -203,19 +203,6 @@ server.post("/checkemail", async (request, response) => {
   }
 });
 
-
-
-// Handle Randomstring
-server.post("/checkstring", (request, response) => {
-  const { otp } = request.body;
-  if (otp) {
-    return response.redirect(`${request.headers["origin"]}/createPassword`);
-  } else {
-    response.render("pages/error", {
-      error: "Random string missing",
-    });
-  }
-});
 
 
 

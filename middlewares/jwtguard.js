@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 function authenticateToken(req, res, next) {
   const token =
         req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
-    console.log(token)
+    // console.log(token)
 
     if (!token) {
       res.clearCookie("auth_token"); // Remove expired token
