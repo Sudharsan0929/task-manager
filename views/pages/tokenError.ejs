@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./components/header.ejs'); %>
+  </head>
+  <body class="container">
+    <div class="app-container text-center">
+      <div class="mb-3">
+        <img class="error-image" src="https://cdn0.iconfinder.com/data/icons/shift-free/32/Error-512.png" />
+      </div>
+      <div class="col-6 mx-auto">
+        <h1 class="text-danger">Error Occurred</h1>
+        <p><%= error %></p>
+        <p>Redirecting to login in <span id="countdown">3</span> seconds...</p>
+        <a href="/signin" class="btn btn-primary">Go to Login</a>
+      </div>
+    </div>
+
+    <script>
+      let countdown = 3;
+      setInterval(() => {
+        if (countdown > 1) {
+          countdown--;
+          document.getElementById("countdown").textContent = countdown;
+        } else {
+          window.location.href = "/signin";
+        }
+      }, 1000);
+    </script>
+
+    <footer><%- include('./components/footer.ejs'); %></footer>
+  </body>
+</html>

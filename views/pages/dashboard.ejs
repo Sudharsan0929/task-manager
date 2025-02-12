@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./components/header.ejs'); %>
+  </head>
+  <body>
+    <%- include('./components/Navbar.ejs'); %>
+
+    <div class="container row mt-3">
+      <% data.forEach(function(_d){ %>
+         <%- include('./components/task', {task:_d}); %> 
+      <% }); %>
+    </div>
+
+    <footer><%- include('./components/footer.ejs'); %></footer>
+  </body>
+</html>

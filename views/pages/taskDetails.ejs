@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./components/header.ejs'); %>
+  </head>
+  <body >
+    <%- include('./components/Navbar.ejs'); %>
+   <div class="container mt-5">
+        <div class="card shadow-lg rounded p-4">
+            <h2 class="text-center text-primary mb-3"><%= task.name %></h2>
+
+            <p class="lead text-muted"><%= task.description %></p>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+                <a href="/edit/<%= task._id %>" class="btn btn-warning">Edit Task</a>
+            </div>
+        </div>
+    </div>
+
+    <footer><%- include('./components/footer.ejs'); %></footer>
+  </body>
+</html>

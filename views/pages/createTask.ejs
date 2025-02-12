@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./components/header.ejs'); %>
+  </head>
+  <body >
+    <%- include('./components/Navbar.ejs'); %>
+    <div class="app-container">
+      <form action="/savetask" method="post">
+        <div class="card" style="width: 20rem">
+          <div class="card-body">
+            <h3 class="card-title mb-3">Add Task</h3>
+            <div class="mb-4">
+              <label for="name" class="form-label">Task Name</label>
+              <input
+                name="name"
+                type="text"
+                class="form-control"
+                id="name"
+                placeholder="Enter Task name"
+              />
+            </div>
+            <div class="mb-4">
+              <label for="description" class="form-label">Task Description</label>
+              <textarea
+                name="description"
+                type="text"
+                class="form-control"
+                id="description"
+                placeholder="Enter Description"
+              ></textarea>
+            </div>
+            <div class="mb-4">
+              <label for="category" class="form-label"> Category</label>
+              <select id="category" name="category">
+                <option value="office">Office</option>
+                <option value="Home">Home</option>
+                <option value="Personal">Personal</option>
+                <option value="Tech">Tech</option>
+              </select>
+            </div>
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">Add task</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <footer><%- include('./components/footer.ejs'); %></footer>
+  </body>
+</html>

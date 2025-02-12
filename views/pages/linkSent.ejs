@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+</html>
+
+<html lang="en">
+  <head>
+    <%- include('./components/header.ejs'); %>
+  </head>
+  <body class="container">
+    <div class="app-container">
+     <div >
+        <h2>Password Reset Link Sent</h2>
+        <p>If an account with the email <strong><%= email %></strong> exists, you will receive a reset link shortly.</p>
+        <p>Please check your email inbox (and spam folder) for further instructions.</p>
+        <a href="/signin">Back to Sign In</a>
+    </div>
+    </div>
+
+    <footer><%- include('./components/footer.ejs'); %></footer>
+  </body>
+</html>
