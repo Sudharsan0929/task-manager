@@ -5,7 +5,7 @@
   </head>
   <body class="container">
     <div class="app-container">
-      <form action="/signup" method="post">
+      <form id="signupForm">
         <div class="card" style="width: 18rem">
           <div class="card-body">
             <h3 class="card-title mb-3">Create Account</h3>
@@ -50,5 +50,50 @@
     </div>
 
     <footer><%- include('./components/footer.ejs'); %></footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document
+          .getElementById("signupForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById("email").value;
+            const name = document.getElementById("fullName").value;
+            const password = document.getElementById("password").value;
+
+              console.log("Form submitted!");
+
+            try {
+              const response = await fetch("/signup", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+
+                body: JSON.stringify({ name, email, password }),
+              });
+
+              console.log("API call made, waiting for response...");
+
+              const data = await response.json();
+              console.log("Response received:", data);
+
+              if (!response.ok) {
+                
+                const errorData = await response.json();
+                alert(errorData.error || "Signup failed");
+                return;
+              }
+
+              window.location.href = "/signin";
+            } catch (error) {
+              console.error("Login error:", error);
+              alert("Something went wrong! Please try again.");
+            }
+          });
+      });
+    </script>
   </body>
 </html>

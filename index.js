@@ -15,16 +15,20 @@ const { generateToken } = require("./utils/jwt");
 const sendMail = require("./utils/email.utils");
 const authenticateToken = require("./middlewares/jwtguard");
 const TokenValidity = require("./middlewares/Tokenvalidity");
+const bodyParser = require("body-parser");
 
 const server = express();
 
 //Middleware to parse cookies
-server.use(cookieParser()); 
+server.use(cookieParser());
 
 //DB Connectivity
 createDbConnection();
 
 //Body-parsing
+
+// server.use(bodyParser.json());
+server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
 // set the view engine to ejs
@@ -48,12 +52,10 @@ server.get("/forgotpassword", function (req, res) {
   res.render("pages/forgotPassword");
 });
 
-
 // Confirm linksent page
 server.get("/linksent", function (req, res) {
-  res.render("pages/linkSent");
+  res.render("pages/linkSent", { email: req.query.email || "" });
 });
-
 
 // Create password page
 server.get("/createPassword", (req, res) => {
@@ -66,7 +68,6 @@ server.get("/createPassword", (req, res) => {
   res.render("pages/createPassword", { token }); // Pass token to EJS
 });
 
-
 // Dashboard page
 server.get("/dashboard", async function (req, res) {
   const tasks = await fetchAllTasks();
@@ -76,15 +77,13 @@ server.get("/dashboard", async function (req, res) {
   });
 });
 
-
-
 // Create Notes page
-server.get("/createtask",authenticateToken, function (req, res) {
+server.get("/createtask", authenticateToken, function (req, res) {
   res.render("pages/createTask");
 });
 
 // Note details page
-server.get("/task/:taskId",authenticateToken, async function (req, res) {
+server.get("/task/:taskId", authenticateToken, async function (req, res) {
   const { taskId } = req.params;
 
   try {
@@ -99,8 +98,6 @@ server.get("/task/:taskId",authenticateToken, async function (req, res) {
   }
 });
 
-
-
 // Error page
 server.get("/error", function (req, res) {
   res.render("pages/error", {
@@ -108,132 +105,189 @@ server.get("/error", function (req, res) {
   });
 });
 
-
-
 // Handle Signup
 server.post("/signup", async (request, response) => {
+  console.log("Incoming signup request:", request.body);
+  response.set("Cache-Control", "no-store");
+
   const { name, email, password } = request.body;
   try {
+    const existingUser = await Usermodel.findOne({ email });
+    console.log("Existing user check:", existingUser);
+    if (existingUser) {
+      return response
+        .status(400)
+        .json({ success: false, error: "Email already exists" });
+    }
+
     // Hashing password using argon2
     const hashedPassword = await argon2.hash(password);
 
     const newUser = new Usermodel({ name, email, password: hashedPassword });
-
+    console.log("Before saving user:", newUser);
     //Saving user to DB
     const result = await newUser.save();
-    // console.log(result);
+    console.log("User saved:", result);
     if (result && result._id) {
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response.json({
+          success: true,
+          message: "Signup successful! Redirecting to signin...",
+        });
+      }
       return response.redirect(`${request.headers["origin"]}/signin`);
     }
   } catch (error) {
+    if (request.headers["accept"]?.includes("application/json")) {
+      console.error("Signup error:", error);
+      response.status(500).json({ success: false, error: error.message });
+    }
     response.render("pages/error", {
       error: error.message,
     });
   }
 });
 
-
-
 // Handle Login
 server.post("/login", async (request, response) => {
   const { email, password } = request.body;
+
   try {
+    // console.log("email:", email)
     const user = await Usermodel.findOne({ email });
 
     if (!user) {
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response.status(400).json({ error: "User not found" });
+      }
       return response.render("pages/error", { error: "User not found" });
     }
 
     // Verifying entered password with hashed password using argon2
     const isMatch = await argon2.verify(user.password, password);
+    // console.log(isMatch)
 
     if (!isMatch) {
-      return response.render("pages/error", {
-        error: "Invalid credentials",
-      });
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response.status(400).json({ error: "Invalid credentials" });
+      }
+      return response.render("pages/error", { error: "Invalid credentials" });
     }
 
     const token = await generateToken(user);
-    // console.log(token);
+    // console.log(token)
 
     response.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: "3600000",
+      maxAge: 3600000, // 1 hour
     });
 
-    return response.redirect(`${request.headers["origin"]}/dashboard`);
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response.json({
+        message: "Login successful",
+        redirect: "/dashboard",
+      });
+    }
+
+    return response.redirect("/dashboard");
   } catch (error) {
-    response.render("pages/error", {
-      error: error.message,
-    });
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response
+        .status(500)
+        .json({ error: "Something went wrong. Please try again." });
+    }
+    response.render("pages/error", { error: error.message });
   }
 });
-
-
 
 // Handle forgotPassword
 server.post("/checkemail", async (request, response) => {
   const { email } = request.body;
   try {
     const matchedUser = await Usermodel.findOne({ email });
+
     if (!matchedUser) {
-      response.render("pages/error", {
-        error: "Email not found",
-      });
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response
+          .status(400)
+          .json({ success: false, error: "Email not found" });
+      }
+      return response.render("pages/error", { error: "Email not found" });
     }
 
     const resettoken = crypto.randomBytes(32).toString("hex");
-    // console.log(`token:${resettoken}`);
     matchedUser.resettoken = resettoken;
     matchedUser.tokenexpiry = Date.now() + 3600000;
     await matchedUser.save();
 
-    const resetUrl = `https://task-manager-zbth.onrender.com/createPassword?token=${resettoken}`; //CREATING RESET LINK PASSING RESET TOKEN AS QUERY
+    const resetUrl = `https://task-manager-zbth.onrender.com/createPassword?token=${resettoken}`;
     const subject = "Password reset link";
     const html = `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password. The link expires in 1 hour.</p>`;
     await sendMail(email, subject, html);
-    // console.log(resetUrl);
 
-    return response.render("pages/linkSent", { email });
-  } catch (error) {
-    response.render("pages/error", {
-      error: error.message,
-    });
-  }
-});
-
-
-
-
-// Handle Randomstring
-server.post("/savepassword", TokenValidity, async (request, response) => {
-  const { password, confirmpassword } = request.body;
-  const { token } = request.body || request.query
-  console.log(token);
-
-  try {
-    const matchedUser = await Usermodel.findOne({ resettoken: token });
-    console.log(matchedUser)
-
-    if (!matchedUser) {
-      return response.render("pages/error", {
-        error: "User not found",
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response.json({
+        success: true,
+        message: "Reset link sent successfully!",
       });
     }
 
-    if ( matchedUser.tokenexpiry && new Date() > new Date(matchedUser.tokenexpiry) ) {
+    return response.render("pages/linkSent", { email });
+  } catch (error) {
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response
+        .status(500)
+        .json({ success: false, error: error.message });
+    }
+    return response.render("pages/error", { error: error.message });
+  }
+});
+
+// Handle Randomstring
+server.post("/savepassword", TokenValidity, async (request, response) => {
+  const { password, confirmpassword, token } = request.body;
+  console.log("Received Token:", token);
+
+  try {
+    const matchedUser = await Usermodel.findOne({ resettoken: token });
+    console.log("Matched User:", matchedUser);
+
+    if (!matchedUser) {
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response
+          .status(400)
+          .json({ success: false, error: "User not found" });
+      }
+      return response.render("pages/error", { error: "User not found" });
+    }
+
+    if (
+      matchedUser.tokenexpiry &&
+      new Date() > new Date(matchedUser.tokenexpiry)
+    ) {
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response
+          .status(400)
+          .json({ success: false, error: "Reset token has expired" });
+      }
       return response.render("pages/error", {
-        error: "Reset token has expired. Please request a new one.",
+        error: "Reset token has expired",
       });
     }
 
     if (password !== confirmpassword) {
-      response.render("pages/error", {
-        error: "Password and confirm password must be same",
+      if (request.headers["accept"]?.includes("application/json")) {
+        return response
+          .status(400)
+          .json({ success: false, error: "Passwords do not match" });
+      }
+      return response.render("pages/error", {
+        error: "Passwords do not match",
       });
     }
 
+    // Hash password and update user
     const hashedPassword = await argon2.hash(password);
     matchedUser.password = hashedPassword;
     matchedUser.resettoken = "";
@@ -241,15 +295,24 @@ server.post("/savepassword", TokenValidity, async (request, response) => {
 
     await matchedUser.save();
 
-    return response.redirect(`${request.headers["origin"]}/signin`);
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response.json({
+        success: true,
+        message: "Password updated successfully!",
+      });
+    }
+
+    return response.redirect("/signin");
   } catch (error) {
-    response.render("pages/error", {
-      error: error.message,
-    });
+    console.error("Error saving password:", error);
+    if (request.headers["accept"]?.includes("application/json")) {
+      return response
+        .status(500)
+        .json({ success: false, error: error.message });
+    }
+    return response.render("pages/error", { error: error.message });
   }
 });
-
-
 
 // Handle Save Notes
 server.post("/savetask", async (request, response) => {
@@ -266,7 +329,6 @@ server.post("/savetask", async (request, response) => {
     });
   }
 });
-
 
 //STARTING THE SERVER
 server.listen(process.env.PORT, process.env.HOST, () => {

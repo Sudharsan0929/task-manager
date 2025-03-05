@@ -5,14 +5,14 @@
   </head>
   <body class="container">
     <div class="app-container">
-      <form action="/login" method="post">
+      <form id="loginForm">
         <div class="card" style="width: 18rem">
           <div class="card-body">
             <h3 class="card-title mb-3">Login</h3>
             <div class="mb-3">
               <label for="email" class="form-label">Email address</label>
               <input
-              name="email"
+                name="email"
                 type="email"
                 class="form-control"
                 id="email"
@@ -22,7 +22,7 @@
             <div class="mb-4">
               <label for="password" class="form-label">Password</label>
               <input
-              name="password"
+                name="password"
                 type="password"
                 class="form-control"
                 id="password"
@@ -44,5 +44,40 @@
     </div>
 
     <footer><%- include('./components/footer.ejs'); %></footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document
+          .getElementById("loginForm")
+          .addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+              const response = await fetch("/login", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json", // Ensure JSON response
+                },
+                body: JSON.stringify({ email, password }), // Stringify properly
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || "Login failed");
+                return;
+              }
+
+              window.location.href = "/dashboard";
+            } catch (error) {
+              console.error("Login error:", error);
+              alert("Something went wrong! Please try again.");
+            }
+          });
+      });
+    </script>
   </body>
 </html>
