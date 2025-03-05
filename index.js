@@ -107,13 +107,13 @@ server.get("/error", function (req, res) {
 
 // Handle Signup
 server.post("/signup", async (request, response) => {
-  console.log("Incoming signup request:", request.body);
+  // console.log("Incoming signup request:", request.body);
   response.set("Cache-Control", "no-store");
 
   const { name, email, password } = request.body;
   try {
     const existingUser = await Usermodel.findOne({ email });
-    console.log("Existing user check:", existingUser);
+    // console.log("Existing user check:", existingUser);
     if (existingUser) {
       return response
         .status(400)
@@ -124,10 +124,10 @@ server.post("/signup", async (request, response) => {
     const hashedPassword = await argon2.hash(password);
 
     const newUser = new Usermodel({ name, email, password: hashedPassword });
-    console.log("Before saving user:", newUser);
+    // console.log("Before saving user:", newUser);
     //Saving user to DB
     const result = await newUser.save();
-    console.log("User saved:", result);
+    // console.log("User saved:", result);
     if (result && result._id) {
       if (request.headers["accept"]?.includes("application/json")) {
         return response.json({
